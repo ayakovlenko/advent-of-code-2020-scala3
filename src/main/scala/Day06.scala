@@ -3,21 +3,16 @@ import scala.io.Source
 
 object Day06 {
 
-  case class Group(decls: List[Declaration]) {
+  opaque type Declaration = Set[Char]
 
+  opaque type Group = List[Declaration]
+
+  extension (g: Group)
     def anyYesCount: Int =
-      decls.foldLeft(Set.empty[Char]) { (acc, decl) =>
-        acc ++ decl.yesAnswers
-      }.size
+      g.foldLeft(Set.empty[Char])(_ union _).size
 
     def allYesCount: Int =
-      decls
-        .map(_.yesAnswers)
-        .reduce(_ intersect _)
-        .size
-  }
-
-  case class Declaration(yesAnswers: Set[Char])
+      g.reduce(_ intersect _).size
 
   def parseInput(): List[Group] =
     val lines = Source.fromFile("./data/day_06.txt").getLines
@@ -26,14 +21,14 @@ object Day06 {
       if lines.hasNext then
         lines.next match
           case "" =>
-            loop(Group(Nil) :: acc, lines)
+            loop(Nil :: acc, lines)
           case line =>
-            val decl = Declaration(line.toSet)
+            val decl = line.toSet
             acc match
-              case Group(decls) :: groups =>
-                loop(Group(decl :: decls) :: groups, lines)
+              case decls :: groups =>
+                loop((decl :: decls) :: groups, lines)
               case Nil =>
-                loop(List(Group(List(decl))), lines)
+                loop(List(List(decl)), lines)
       else
         acc
 
