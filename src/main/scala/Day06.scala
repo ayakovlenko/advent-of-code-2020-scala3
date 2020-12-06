@@ -1,18 +1,26 @@
 import scala.annotation.tailrec
 import scala.io.Source
 
-object Day06 {
+object Day06:
 
-  opaque type Declaration = Set[Char]
+  object T:
+    opaque type Declaration = Set[Char]
 
-  opaque type Group = List[Declaration]
+    object Declaration:
+      def apply(s: String): Declaration = s.toSet
 
-  extension (g: Group)
-    def anyYesCount: Int =
-      g.foldLeft(Set.empty[Char])(_ union _).size
+    opaque type Group = List[Declaration]
 
-    def allYesCount: Int =
-      g.reduce(_ intersect _).size
+    object Group:
+      def apply(decls: List[Declaration] = Nil): Group = decls
+      def apply(decl: Declaration): Group = List(decl)
+
+    extension (g: Group)
+      def add(decl: Declaration): Group = decl :: g
+      def anyYesCount: Int = g.foldLeft(Set.empty[Char])(_ union _).size
+      def allYesCount: Int = g.reduce(_ intersect _).size
+
+  import T._
 
   def parseInput(): List[Group] =
     val lines = Source.fromFile("./data/day_06.txt").getLines
@@ -21,14 +29,14 @@ object Day06 {
       if lines.hasNext then
         lines.next match
           case "" =>
-            loop(Nil :: acc, lines)
+            loop(Group() :: acc, lines)
           case line =>
-            val decl = line.toSet
+            val decl: Declaration = Declaration(line)
             acc match
-              case decls :: groups =>
-                loop((decl :: decls) :: groups, lines)
+              case group :: groups =>
+                loop((group add decl) :: groups, lines)
               case Nil =>
-                loop(List(List(decl)), lines)
+                loop(List(Group(decl)), lines)
       else
         acc
 
@@ -36,13 +44,10 @@ object Day06 {
 
   val input = parseInput()
 
-  def part1: Int =
-    input.map(_.anyYesCount).sum
+  def part1: Int = input.map(_.anyYesCount).sum
 
-  def part2: Int =
-    input.map(_.allYesCount).sum
+  def part2: Int = input.map(_.allYesCount).sum
 
   def main(args: Array[String]) =
     println(part1)
     println(part2)
-}
