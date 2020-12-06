@@ -1,11 +1,11 @@
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-class Day01Test {
+class Day06Test {
 
   @Test def part1(): Unit =
-    assertEquals(Some(805731), Day01.part1)
+    assertEquals(6387, Day06.part1)
 
   @Test def part2(): Unit =
-    assertEquals(Some(192684960), Day01.part2)
+    assertEquals(3039, Day06.part2)
 }
