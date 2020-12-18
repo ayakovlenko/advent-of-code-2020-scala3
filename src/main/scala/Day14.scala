@@ -1,13 +1,12 @@
 import scala.io.Source
+import scala.annotation.tailrec
 
 object Day14:
 
   object T:
 
     enum MaskVal:
-      case _0
-      case _1
-      case _X
+      case _0, _1, _X
 
     opaque type Mask = String
 
@@ -25,7 +24,7 @@ object Day14:
 
     case class Program(mask: Mask, instructions: List[Instruction])
 
-    case class Instruction(memAddr: Int, value: Long)
+    case class Instruction(memAddr: Long, value: Long)
 
     extension (x: Long)
       def bits: List[Int] =
@@ -69,12 +68,16 @@ object Day14:
                     Instruction(memAddr.toInt, value.toLong) :: insts
                   ) :: ps
         }.reverse
+  
+  // ---
 
   object Emulator1:
 
     def run(programs: List[Program]): Long =
       val mem = new Array[Long](
-        _length = programs.flatMap(_.instructions).map(_.memAddr).max + 1
+        _length = Math.toIntExact(
+          programs.flatMap(_.instructions).map(_.memAddr).max + 1
+        )
       )
       programs.foreach { program =>
         program.instructions.foreach { case Instruction(memAddr, value) =>
@@ -84,10 +87,37 @@ object Day14:
               case (_, MaskVal._1) => 1
               case (x, MaskVal._X) => x
             }.toLong
-          mem(memAddr) = newValue
+          mem(Math.toIntExact(memAddr)) = newValue
         }
       }
       mem.sum
+    
+  object Emulator2:
+
+    def run(programs: List[Program]): Long =
+      val mem = scala.collection.mutable.Map.empty[Long, Long]
+      programs.foreach { program =>
+        program.instructions.foreach { case Instruction(memAddr, value) =>
+          floatingAddrs(memAddr, program.mask).foreach { memAddr =>
+            mem(memAddr) = value
+          }
+        }
+      }
+      mem.values.sum
+
+    def floatingAddrs(memAddr: Long, mask: Mask): List[Long] =
+      def loop(xs: List[(Int, MaskVal)], bits: List[Int]): List[Long] =
+        xs match
+          case Nil =>
+            bits.reverse.toLong :: Nil
+          case (x, MaskVal._0) :: ys =>
+            loop(ys, x :: bits)
+          case (_, MaskVal._1) :: ys =>
+            loop(ys, 1 :: bits)
+          case (x, MaskVal._X) :: ys =>
+            loop(ys, 0 :: bits) ++ loop(ys, 1 :: bits)
+
+      loop(memAddr.bits zip mask.values, Nil)
 
     // ---
 
@@ -95,3 +125,5 @@ object Day14:
     val input = InputParser.parse("./data/day_14.txt")
 
     println(Emulator1.run(input)) // == 9296748256641
+    
+    println(Emulator2.run(input)) // == 4877695371685
