@@ -1,7 +1,7 @@
 import scala.annotation.tailrec
 import scala.io.Source
 
-object Day01 {
+object Day01:
 
   val input = Source.fromFile("./data/day_01.txt").getLines.map(_.toInt).toList
 
@@ -36,4 +36,3 @@ object Day01 {
   def main(args: Array[String]) =
     part1.foreach(println)
     part2.foreach(println)
-}
