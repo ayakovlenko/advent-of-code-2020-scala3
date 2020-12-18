@@ -70,25 +70,28 @@ object Day14:
                   ) :: ps
         }.reverse
 
-  // ---
+  object Emulator1:
+
+    def run(programs: List[Program]): Long =
+      val mem = new Array[Long](
+        _length = programs.flatMap(_.instructions).map(_.memAddr).max + 1
+      )
+      programs.foreach { program =>
+        program.instructions.foreach { case Instruction(memAddr, value) =>
+          val newValue =
+            (value.bits zip program.mask.values).map {
+              case (_, MaskVal._0) => 0
+              case (_, MaskVal._1) => 1
+              case (x, MaskVal._X) => x
+            }.toLong
+          mem(memAddr) = newValue
+        }
+      }
+      mem.sum
+
+    // ---
 
   def main(args: Array[String]): Unit =
     val input = InputParser.parse("./data/day_14.txt")
 
-    val arr = new Array[Long](
-      _length = input.flatMap(_.instructions).map(_.memAddr).max + 1
-    )
-
-    input.foreach { program =>
-      program.instructions.foreach { case Instruction(memAddr, value) =>
-        val newValue =
-          (value.bits zip program.mask.values).map {
-            case (_, MaskVal._0) => 0
-            case (_, MaskVal._1) => 1
-            case (x, MaskVal._X) => x
-          }.toLong
-        arr(memAddr) = newValue
-      }
-    }
-
-    println(arr.sum) // == 9296748256641
+    println(Emulator1.run(input)) // == 9296748256641
