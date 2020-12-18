@@ -28,14 +28,14 @@ object Day14:
 
     extension (x: Long)
       def bits: List[Int] =
-        var result = List.empty[Int]
-        var y = x
-        var i = 0
-        while i < 36 do
-          result = (y & 1).toInt :: result
-          i = i + 1
-          y = y >> 1
-        result
+        Iterator.iterate(x)(_ << 1)
+          .map(_ & 34359738368L)
+          .map {
+            case 34359738368L => 1
+            case _ => 0
+          }
+          .take(36)
+          .toList
 
     extension (xs: List[Int])
       def toLong: Long = java.lang.Long.parseLong(xs.mkString, 2)
@@ -74,35 +74,33 @@ object Day14:
   object Emulator1:
 
     def run(programs: List[Program]): Long =
-      val mem = new Array[Long](
-        _length = Math.toIntExact(
-          programs.flatMap(_.instructions).map(_.memAddr).max + 1
-        )
-      )
-      programs.foreach { program =>
-        program.instructions.foreach { case Instruction(memAddr, value) =>
-          val newValue =
-            (value.bits zip program.mask.values).map {
-              case (_, MaskVal._0) => 0
-              case (_, MaskVal._1) => 1
-              case (x, MaskVal._X) => x
-            }.toLong
-          mem(Math.toIntExact(memAddr)) = newValue
+      val mem =
+        programs.foldLeft(Map.empty[Long, Long]) { (mem, program) =>
+          program.instructions.foldLeft(mem) {
+            case (mem, Instruction(memAddr, value)) =>
+              val newValue =
+                (value.bits zip program.mask.values).map {
+                  case (_, MaskVal._0) => 0
+                  case (_, MaskVal._1) => 1
+                  case (x, MaskVal._X) => x
+                }.toLong
+              mem.updated(memAddr, newValue)
+          }
         }
-      }
-      mem.sum
+      mem.values.sum
     
   object Emulator2:
 
     def run(programs: List[Program]): Long =
-      val mem = scala.collection.mutable.Map.empty[Long, Long]
-      programs.foreach { program =>
-        program.instructions.foreach { case Instruction(memAddr, value) =>
-          floatingAddrs(memAddr, program.mask).foreach { memAddr =>
-            mem(memAddr) = value
+      val mem =
+        programs.foldLeft(Map.empty[Long, Long]) { (mem, program) =>
+          program.instructions.foldLeft(mem) {
+            case (mem, Instruction(memAddr, value)) =>
+              floatingAddrs(memAddr, program.mask).foldLeft(mem) { (mem, memAddr) =>
+                mem.updated(memAddr, value)
+              }
           }
         }
-      }
       mem.values.sum
 
     def floatingAddrs(memAddr: Long, mask: Mask): List[Long] =
